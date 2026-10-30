@@ -838,7 +838,7 @@ export class Ecosystem {
       const wt = this.plants.find((p) => !p.dead && PLANTS[p.sp].unique);
       for (let k = 0; k < 10 && wt; k++) { const d = w.pos[t * 3] * w.pos[wt.tile * 3] + w.pos[t * 3 + 1] * w.pos[wt.tile * 3 + 1] + w.pos[t * 3 + 2] * w.pos[wt.tile * 3 + 2]; if (d < 0.9) break; t = landTile(); }
       e.tile = t; e.end = day + 1.2;
-      this.impact(t);
+      e.pending = true; // the game plays the meteor animation, then calls impact()
     }
     this.events.push(e);
     this.nextEventDay = day + (era >= 6 ? 4.5 : era >= 5 ? 5.5 : 6.5) + this.rng.float(0, 3);
@@ -969,6 +969,7 @@ export class Ecosystem {
       if (e.type === 'drought' && e.tile != null) e.tiles = w.tilesWithin(e.tile, 0.42);
       return e;
     });
+    for (const e of this.events) if (e.type === 'meteor' && e.pending) { e.pending = false; this.impact(e.tile); }
     this.nextEventDay = d.nextEventDay ?? 7;
     if (d.history) this.history = d.history;
     if (d.stats) this.stats = { ...this.stats, ...d.stats };
