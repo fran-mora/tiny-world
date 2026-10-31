@@ -89,7 +89,7 @@ export function openResearch(game, tab = 'life', focusId = null) {
       const max = l >= u.maxLevel;
       const cost = max ? 0 : u.cost(l);
       let portrait = null;
-      try { portrait = M.portrait('genome', u.id, 112); } catch (e) {}
+      try { portrait = fitCanvas(M.portrait('genome', u.id, 112)); } catch (e) {}
       list.appendChild(el('div.card.res-card', {}, [
         el('div.thumb', {}, portrait || icon('dna', 'lg')),
         el('div.info', {}, [
@@ -213,7 +213,7 @@ export function openLife(game, tab = 'pop') {
       const g2 = el('div.codex-grid');
       for (const m of M.MICROBE_SPECIES) {
         const known = !!st.codex.microbes[m.id];
-        let p = null; try { p = M.portrait('microbe', m.id, 112); } catch (e) {}
+        let p = null; try { p = fitCanvas(M.portrait('microbe', m.id, 112)); } catch (e) {}
         g2.appendChild(el('div.codex-item', { class: known ? '' : 'unknown', onclick: () => { audio.sfx('click'); if (known) dialog({ title: m.name, text: m.desc }); } }, [el('div.thumb', {}, p || icon('microbe')), known ? m.name : '???']));
       }
       out.push(g2);
@@ -223,7 +223,7 @@ export function openLife(game, tab = 'pop') {
       const g3 = el('div.codex-grid');
       for (const m of M.MUTATIONS) {
         const known = !!st.codex.mutations[m.id];
-        let p = null; try { p = M.portrait('mutation', m.id, 112); } catch (e) {}
+        let p = null; try { p = fitCanvas(M.portrait('mutation', m.id, 112)); } catch (e) {}
         g3.appendChild(el('div.codex-item', { class: known ? '' : 'unknown', onclick: () => { audio.sfx('click'); if (known) dialog({ title: m.name, text: m.desc }); } }, [el('div.thumb', {}, p || icon('dna')), known ? m.name : '???']));
       }
       out.push(g3);
@@ -423,5 +423,8 @@ export function awayDialog(summary) {
     buttons: [{ label: 'Continue', cls: 'btn-primary' }],
   });
 }
+
+// portraits come with a fixed CSS size; make them fill their thumbnail box
+function fitCanvas(c) { if (c && c.style) { c.style.width = '100%'; c.style.height = '100%'; } return c; }
 
 const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : '');
