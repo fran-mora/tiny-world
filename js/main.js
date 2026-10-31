@@ -75,6 +75,8 @@ class Game {
     window.addEventListener('pagehide', () => this.save());
     // iOS suspends audio in the background; resume it on the next touch
     document.addEventListener('pointerdown', () => { if (audio.ready) audio.resume(); }, { passive: true });
+    this.lastInput = performance.now();
+    for (const ev of ['pointerdown', 'pointermove', 'wheel', 'keydown']) window.addEventListener(ev, () => { this.lastInput = performance.now(); }, { passive: true, capture: true });
     window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && this.mode === 'planet') { if (!closeTopModal()) this.view.closeTray(); } });
     this.registerSW();
   }
@@ -147,8 +149,12 @@ class Game {
     }
     if (this.mode === 'planet') this.autoQuality(dt);
     if (this.mode === 'planet' || this.mode === 'title') {
-      const skip = st.settings.battery && (this.frameCount & 1);
-      if (!skip) this.renderer.render(st.settings.battery ? dt * 2 : dt, this.speed > 0 ? this.acc : 1);
+      // save battery: draw every other frame in battery mode, or when the player hasn't touched the screen for a while
+      const idle = performance.now() - this.lastInput > 4000 && !this.renderer.rig.flying && !this.renderer.meteor;
+      const half = st.settings.battery || idle;
+      this.renderAcc = (this.renderAcc || 0) + dt;
+      const skip = half && (this.frameCount & 1);
+      if (!skip) { this.renderer.render(this.renderAcc, this.speed > 0 ? this.acc : 1); this.renderAcc = 0; }
       if (this.mode === 'planet') { this.view.update(); this.view.frame(dt); }
     }
     this.secTimer += dt; this.saveTimer += dt;
