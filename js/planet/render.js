@@ -261,7 +261,7 @@ export class PlanetRenderer {
   // ---------- water ----------
   buildWater() {
     const g = new THREE.IcosahedronGeometry(R, 18);
-    const m = new THREE.MeshStandardMaterial({ color: '#1a3d74', transparent: true, opacity: 0.84, roughness: 0.42, metalness: 0.05, flatShading: true, emissive: '#06142b' });
+    const m = new THREE.MeshStandardMaterial({ color: '#1a3d74', transparent: true, opacity: 0.84, roughness: 0.55, metalness: 0, flatShading: true, emissive: '#06142b' });
     this.waterUniforms = { uTime: { value: 0 } };
     m.onBeforeCompile = (sh) => {
       sh.uniforms.uTime = this.waterUniforms.uTime;
