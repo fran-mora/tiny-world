@@ -260,8 +260,8 @@ export class PlanetRenderer {
 
   // ---------- water ----------
   buildWater() {
-    const g = new THREE.IcosahedronGeometry(R, 5);
-    const m = new THREE.MeshStandardMaterial({ color: '#1a3d74', transparent: true, opacity: 0.84, roughness: 0.22, metalness: 0.05, flatShading: true, emissive: '#06142b' });
+    const g = new THREE.IcosahedronGeometry(R, 18);
+    const m = new THREE.MeshStandardMaterial({ color: '#1a3d74', transparent: true, opacity: 0.84, roughness: 0.42, metalness: 0.05, flatShading: true, emissive: '#06142b' });
     this.waterUniforms = { uTime: { value: 0 } };
     m.onBeforeCompile = (sh) => {
       sh.uniforms.uTime = this.waterUniforms.uTime;
@@ -905,6 +905,10 @@ class Clouds {
       mesh.setColorAt(k, tmpC);
     }
     this.meshes.forEach((m, v) => { m.count = Math.min(40, counts[v]); m.instanceMatrix.needsUpdate = true; m.instanceColor.needsUpdate = true; });
+    // fade clouds away when the camera dives close to the surface so they don't block the view
+    const zt = this.owner.rig ? this.owner.rig.zoomT || 0 : 0;
+    const op = 0.92 * (1 - Math.min(1, zt * 1.25) * 0.88);
+    this.meshes.forEach((m) => { m.material.opacity = op; m.visible = op > 0.05; m.castShadow = op > 0.5; });
     this.rain.update(dt);
   }
   posOf(c) {
