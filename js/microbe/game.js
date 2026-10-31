@@ -11,7 +11,7 @@ const { sin, cos, atan2, hypot, min, max, abs, sqrt, exp, floor, random, PI } = 
 const MAX_ENT = 250, MAX_MOTES = 200;
 const HOSTILE = { hunter: 1, amoeba: 1, rotifer: 1, siphonophore: 1, phage: 1 };
 const KIND_XP = { drifter: 2.5, grazer: 2.2, diatom: 4.5, hunter: 3, ciliate: 2.6, rotifer: 3, volvox: 1.4, amoeba: 2.6, phage: 0.6, siphonophore: 3 };
-const angDiff = (a, b) => { let d = b - a; while (d > PI) d -= TAU; while (d < -PI) d += TAU; return d; };
+const angDiff = (a, b) => { const d = b - a; if (!Number.isFinite(d)) return 0; return ((d + PI) % TAU + TAU) % TAU - PI; };
 
 export function startGame(opts) {
   const g = new MicrobeGame(opts);
@@ -171,7 +171,7 @@ class MicrobeGame {
     this.W = max(1, r.width); this.H = max(1, r.height);
     this.dpr = this.battery ? 1 : min(2, window.devicePixelRatio || 1);
     this.canvas.width = Math.round(this.W * this.dpr); this.canvas.height = Math.round(this.H * this.dpr);
-    this.bgGrad = null; this.vig = null;
+    this.bgGrad = null; this.vig = null; this.redVig = null; this.frozenFrames = 0;
   }
 
   // ---------- input ----------
@@ -337,7 +337,8 @@ class MicrobeGame {
     const hc = {};
     for (const h of this.hazards) hc[h.type] = (hc[h.type] || 0) + 1;
     for (const type in hz) {
-      while ((hc[type] || 0) < hz[type]) {
+      let hg = 0;
+      while ((hc[type] || 0) < hz[type] && hg++ < 40) {
         const [x, y] = initial ? [this.p.x + (random() - 0.5) * 2400, this.p.y + (random() - 0.5) * 2400] : this.ringPos(1.3, 2.0);
         if (initial && hypot(x - this.p.x, y - this.p.y) < 350) continue;
         const E = D.expectedRadius(this.depth);
@@ -355,8 +356,9 @@ class MicrobeGame {
     let dt = (now - this.last) / 1000; this.last = now;
     if (!(dt > 0)) dt = 0; dt = min(dt, 1 / 20);
     const t0 = performance.now();
-    if (!this.paused) this.update(dt * this.slowmo);
-    this.render(dt);
+    const frozen = this.paused || !!this.modal;
+    if (!frozen) { this.update(dt * this.slowmo); this.frozenFrames = 0; }
+    if (!frozen || (this.frozenFrames = (this.frozenFrames || 0) + 1) <= 3) this.render(dt);
     this.frameMs = performance.now() - t0;
   }
 
@@ -429,7 +431,7 @@ class MicrobeGame {
     p.x += p.vx * dt; p.y += p.vy * dt;
     const sp = hypot(p.vx, p.vy);
     p.speedN = min(1.5, sp / max(1, top));
-    if (sp > 8) { const ta = atan2(p.vy, p.vx); const da = angDiff(p.ang, ta); p.ang += da * min(1, dt * 8); p.wiggle += abs(da) * min(1, sp / top) * 1.2; }
+    if (sp > 8) { const ta = atan2(p.vy, p.vx); const da = angDiff(p.ang, ta); p.ang = ta - da + da * min(1, dt * 8); p.wiggle += abs(da) * min(1, sp / top) * 1.2; }
     p.wiggle *= exp(-dt * 1.2);
     p.stretch = lerp(p.stretch, min(0.16, p.speedN * 0.1) + (p.dashT > 0 ? 0.12 : 0), 1 - exp(-dt * 6));
     p.wob = lerp(p.wob, p.flashT > 0 ? 0.08 : 0, 1 - exp(-dt * 8));
@@ -505,13 +507,16 @@ class MicrobeGame {
     const p = this.p;
     const bonus = 1 + min(0.5, this.combo * 0.04);
     const x = v * this.xpMult * bonus;
+    if (!(x > 0) || !Number.isFinite(x)) return;
     p.xp += x; this.stats.biomass += x;
     if (meal && p.muts.lysosome) this.heal(p.maxHp * 0.02 * p.muts.lysosome);
-    let need = D.xpToNext(p.level);
-    while (p.xp >= need) {
+    let need = D.xpToNext(p.level), guard = 0;
+    while (p.xp >= need && guard++ < 60) {
       p.xp -= need; p.level++; this.pendingLevels++;
       need = D.xpToNext(p.level);
     }
+    if (p.xp >= need) p.xp = need * 0.99; // absurd grants: carry no more than one level
+    this.pendingLevels = min(this.pendingLevels, 30);
     if (this.pendingLevels) this.recalc();
   }
 
@@ -1188,7 +1193,7 @@ class MicrobeGame {
           this.sfx('evolve'); this.buzz(20);
           [...cardsBox.children].forEach((c) => c.classList.add(c === card ? 'chosen' : 'gone'));
           this.applyMutation(m.id);
-          this.later(260, () => { ov.classList.add('closing'); this.later(200, () => { ov.remove(); this.modal = null; if (headstart && --this.headstartLeft > 0) this.offerHeadstart(); }); });
+          this.later(260, () => { ov.classList.add('closing'); this.later(200, () => { ov.remove(); this.modal = null; this.levelOv = null; if (this.pausedFromLevel) { this.pausedFromLevel = false; this.paused = false; this.pause(true); } else if (headstart && --this.headstartLeft > 0) this.offerHeadstart(); }); });
         });
         cardsBox.appendChild(card);
       });
@@ -1520,7 +1525,8 @@ class MicrobeGame {
     // screen space overlays
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     // floating text
-    ctx.font = '800 14px ' + getComputedStyle(this.root).fontFamily;
+    if (!this.fontFam) this.fontFam = getComputedStyle(this.root).fontFamily || 'system-ui, sans-serif';
+    ctx.font = '800 14px ' + this.fontFam;
     ctx.textAlign = 'center';
     for (const t of this.texts) {
       ctx.globalAlpha = min(1, t.life * 2);
@@ -1529,7 +1535,7 @@ class MicrobeGame {
     }
     if (this.combo >= 4 && !this.dead) {
       ctx.globalAlpha = min(1, this.comboT * 2);
-      ctx.font = '900 ' + (13 + min(10, this.combo) * 0.8) + 'px ' + getComputedStyle(this.root).fontFamily;
+      ctx.font = '900 ' + (13 + min(10, this.combo) * 0.8) + 'px ' + this.fontFam;
       ctx.fillStyle = '#ffe7a8'; ctx.fillText('×' + this.combo, wx(p.x), wy(p.y - p.r) - 14);
     }
     ctx.globalAlpha = 1;
@@ -1715,7 +1721,7 @@ class MicrobeGame {
     return {
       game: g,
       get state() { return { depth: g.depth, depthTime: g.depthTime, level: g.p.level, hp: g.p.hp, maxHp: g.p.maxHp, xp: g.p.xp, ents: g.ents.length, motes: g.motes.length, parts: g.parts.length, modal: g.modal, paused: g.paused, boss: g.boss ? { kind: g.boss.kind, hp: g.boss.hp, maxHp: g.boss.maxHp, phase: g.boss.phase } : null, dead: g.dead, victory: g.victory, frameMs: g.frameMs, muts: { ...g.p.muts }, dna: g.calcDNA().total, listeners: g.listeners.length, timeouts: g.timeouts.length }; },
-      grantXP(n) { g.gainXP(n / g.xpMult, false); },
+      grantXP(n) { g.gainXP(Number(n) / (g.xpMult || 1), false); },
       levelUp(n = 1) { for (let i = 0; i < n; i++) { g.p.level++; g.pendingLevels++; } g.recalc(); },
       setLevel(L) { g.p.level = L; g.recalc(); },
       mutate(id, lv = 1) { for (let i = 0; i < lv; i++) g.applyMutation(id); },

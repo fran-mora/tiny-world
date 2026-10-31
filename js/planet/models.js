@@ -160,6 +160,8 @@ class Builder {
    * o.fit: {axis:'y'|'x'|'z'|'xz', size} uniform rescale; o.align: 'base' (minY→0) | 'center' (bbox y centre→0)
    * o.centerXZ: centre bbox on x/z; o.defaultSway: false → no implicit y-based sway; o.sink: y offset
    */
+  maxY() { let m = -Infinity; for (let k = 1; k < this.P.length; k += 3) if (this.P[k] > m) m = this.P[k]; return m; }
+
   geometry(o = {}) {
     const n = this.P.length / 3;
     const P = new Float32Array(this.P);
@@ -167,7 +169,7 @@ class Builder {
     for (let k = 0; k < n; k++) for (let a = 0; a < 3; a++) {
       const x = P[3 * k + a]; if (x < mn[a]) mn[a] = x; if (x > mx[a]) mx[a] = x;
     }
-    let s = 1;
+    let s = o.scale ?? 1;
     if (o.fit) {
       const ax = o.fit.axis || 'y';
       const ext = ax === 'y' ? (o.align ? mx[1] - mn[1] : mx[1])
