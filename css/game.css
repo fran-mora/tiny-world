@@ -160,3 +160,5 @@
   .dive-btn { width: 62px; height: 62px; }
   .dock-btn span.lbl { display: none; }
 }
+
+.build-tag { text-align: center; font-size: 12px; font-weight: 700; color: var(--text-faint); letter-spacing: .04em; font-variant-numeric: tabular-nums; }

@@ -7,6 +7,7 @@ import { MILESTONES, activeGoals } from './data/milestones.js';
 import { thumbEl } from './planet/thumbs.js';
 import { roman, hexA } from './planet/view.js';
 import { store } from './state.js';
+import { BUILD, BUILD_TIME } from './version.js';
 
 // ------------------------------------------------------------------ research
 export function openResearch(game, tab = 'life', focusId = null) {
@@ -327,7 +328,7 @@ export function openMenu(game) {
         if (await confirm('Start a new world?', 'Your current planet will be replaced with a brand new one. Genome upgrades, codex and settings are kept.', 'New world', 'btn-danger')) game.newWorld(false);
       } }, [icon('refresh'), 'Start a new world']),
     ]),
-    el('div.small.faint.center', { style: { marginTop: '18px' } }, `Tiny World · World #${st.worldNumber} · seed ${st.seed}`),
+    el('div.small.faint.center', { style: { marginTop: '18px' } }, `Tiny World · Build ${BUILD} (${BUILD_TIME}) · World #${st.worldNumber}`),
   ];
   return sheet({ title: 'Menu', body });
 }
