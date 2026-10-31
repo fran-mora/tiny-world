@@ -13,6 +13,13 @@ const HOSTILE = { hunter: 1, amoeba: 1, rotifer: 1, siphonophore: 1, phage: 1 };
 const KIND_XP = { drifter: 2.5, grazer: 2.2, diatom: 4.5, hunter: 3, ciliate: 2.6, rotifer: 3, volvox: 1.4, amoeba: 2.6, phage: 0.6, siphonophore: 3 };
 const angDiff = (a, b) => { const d = b - a; if (!Number.isFinite(d)) return 0; return ((d + PI) % TAU + TAU) % TAU - PI; };
 
+// Repeatable rewards offered once every mutation is maxed (or to fill a short hand).
+const BOONS = [
+  { id: 'renew', boon: true, icon: 'mito', name: 'Renewal', rarity: 'common', desc: 'Your cell rebuilds itself. Fully heals and toughens your membrane.', eff: 'Full heal, +10 max HP' },
+  { id: 'cache', boon: true, icon: 'vacuole', name: 'Genetic Cache', rarity: 'rare', desc: 'Bank your surplus genes for later.', eff: '+4 DNA this run' },
+  { id: 'vigor', boon: true, icon: 'flagellum', name: 'Vigor', rarity: 'common', desc: 'A surge of metabolism.', eff: '+6% speed and biomass' },
+];
+
 export function startGame(opts) {
   const g = new MicrobeGame(opts);
   return g;
@@ -42,6 +49,7 @@ class MicrobeGame {
     this.mutOrder = [];
     this.shake = 0; this.flash = 0; this.slowmo = 1;
     this.combo = 0; this.comboT = 0;
+    this.boons = {}; this.boonHp = 0; this.bonusDNA = 0; this.boonMult = 1;
     this.pendingLevels = 0; this.rerolls = this.genome.splice | 0;
     this.reviveLeft = (this.genome.cystmem | 0) > 0 ? 1 : 0;
     this.trans = null; this.dead = false; this.victory = false; this.abandoned = false;
@@ -108,15 +116,15 @@ class MicrobeGame {
   recalc() {
     const p = this.p, m = p.muts, g = this.genome;
     const oldMax = p.maxHp;
-    p.maxHp = Math.round(100 * (1 + 0.15 * (g.hp | 0)) + 25 * (m.membrane | 0));
+    p.maxHp = Math.round(100 * (1 + 0.15 * (g.hp | 0)) + 25 * (m.membrane | 0) + (this.boonHp | 0));
     if (p.maxHp > oldMax) p.hp += p.maxHp - oldMax;
     p.hp = min(p.hp, p.maxHp);
     p.r = D.playerRadius(p.level);
-    this.speedMult = (1 + 0.06 * (g.motor | 0)) * (1 + 0.12 * (m.flagellum | 0));
+    this.speedMult = (1 + 0.06 * (g.motor | 0)) * (1 + 0.12 * (m.flagellum | 0)) * Math.min(1.5, this.boonMult || 1);
     this.accel = 5.5 * (1 + 0.25 * (m.cilia | 0));
     this.reach = 1 + 0.15 * (m.cilia | 0);
     this.magnet = (55 + p.r * 2.2) * (1 + 0.4 * (m.biolum | 0)) * (1 + 0.2 * (g.sensory | 0)) * this.reach;
-    this.xpMult = (1 + 0.1 * (g.digest | 0)) * (1 + 0.15 * (m.vacuole | 0));
+    this.xpMult = (1 + 0.1 * (g.digest | 0)) * (1 + 0.15 * (m.vacuole | 0)) * (this.boonMult || 1);
     this.regen = 0.9 * (m.mito | 0);
     this.hazMult = 1 - 0.25 * (m.osmo | 0);
     this.sight = 1 - 0.22 * (m.mimicry | 0);
@@ -1153,6 +1161,9 @@ class MicrobeGame {
       const m = R.weighted(pool, (x) => D.RARITY[x.rarity].weight * (p.muts[x.id] ? 1.25 : 1) * (x.active && this.depth === 1 && p.level < 3 ? 0.5 : 1));
       out.push(m); pool.splice(pool.indexOf(m), 1);
     }
+    // when the genome is (nearly) complete, fill the remaining slots with repeatable boons so a
+    // level-up can never come up empty
+    for (const b of BOONS) { if (out.length >= n) break; out.push(b); }
     return out;
   }
   offerLevel(headstart = false) {
@@ -1175,17 +1186,18 @@ class MicrobeGame {
       cardsBox.innerHTML = '';
       const offers = this.pickOffers(n);
       offers.forEach((m, i) => {
-        const lv = p.muts[m.id] | 0;
+        const boon = !!m.boon;
+        const lv = boon ? (this.boons[m.id] | 0) : (p.muts[m.id] | 0);
         const rc = D.RARITY[m.rarity];
-        const pips = el('div.mb-clv', {}, Array.from({ length: m.maxLevel }, (_, k) => el('i', { class: k < lv ? 'on' : k === lv ? 'new' : '' })));
-        const isNew = !(this.codex.mutations && this.codex.mutations[m.id]) && !this.disc.mutations.includes(m.id);
+        const pips = boon ? (lv ? el('div.mb-ceff', { style: { opacity: 0.7 } }, `Taken ${lv}\u00d7`) : null) : el('div.mb-clv', {}, Array.from({ length: m.maxLevel }, (_, k) => el('i', { class: k < lv ? 'on' : k === lv ? 'new' : '' })));
+        const isNew = !boon && !(this.codex.mutations && this.codex.mutations[m.id]) && !this.disc.mutations.includes(m.id);
         const card = el('button.mb-card', { style: { '--rc': rc.color, animationDelay: i * 0.07 + 's' } }, [
           isNew ? el('span.mb-new', {}, 'NEW') : null,
-          el('div.mb-port', {}, portrait('mutation', m.id, 72)),
+          el('div.mb-port', {}, portrait('mutation', m.icon || m.id, 72)),
           el('div.mb-cbody', {}, [
             el('div.mb-cname', {}, [m.name, el('span.tag', { style: { color: rc.color, background: rc.color + '22' } }, rc.label)]),
             el('div.mb-cdesc', {}, m.desc),
-            el('div.mb-ceff', {}, lv ? `${m.lv(lv)} → ${m.lv(lv + 1)}` : m.lv(1)),
+            el('div.mb-ceff', {}, boon ? m.eff : lv ? `${m.lv(lv)} → ${m.lv(lv + 1)}` : m.lv(1)),
             pips,
           ]),
         ]);
@@ -1194,7 +1206,7 @@ class MicrobeGame {
           if (ov.dataset.done) return; ov.dataset.done = '1';
           this.sfx('evolve'); this.buzz(20);
           [...cardsBox.children].forEach((c) => c.classList.add(c === card ? 'chosen' : 'gone'));
-          this.applyMutation(m.id);
+          if (boon) this.applyBoon(m.id); else this.applyMutation(m.id);
           this.later(260, () => { ov.classList.add('closing'); this.later(200, () => { ov.remove(); this.modal = null; this.levelOv = null; if (this.pausedFromLevel) { this.pausedFromLevel = false; this.paused = false; this.pause(true); } else if (headstart && --this.headstartLeft > 0) this.offerHeadstart(); }); });
         });
         cardsBox.appendChild(card);
@@ -1203,9 +1215,18 @@ class MicrobeGame {
       if (this.rerolls > 0) foot.appendChild(el('button.btn.btn-ghost', { onclick: () => { if (ov.dataset.done) return; this.rerolls--; this.sfx('click'); render(); } }, [icon('refresh'), `Reroll (${this.rerolls})`]));
     };
     render();
+    if (!cardsBox.children.length) { this.modal = null; this.levelOv = null; return; }
     ov.append(head, cardsBox, foot);
     this.root.appendChild(ov);
     this.levelOv = ov;
+  }
+  applyBoon(id) {
+    const p = this.p;
+    this.boons[id] = (this.boons[id] | 0) + 1;
+    if (id === 'renew') { this.boonHp = (this.boonHp | 0) + 10; this.recalc(); p.hp = p.maxHp; }
+    else if (id === 'cache') { this.bonusDNA = (this.bonusDNA | 0) + 4; }
+    else if (id === 'vigor') { this.boonMult = (this.boonMult || 1) * 1.06; this.recalc(); }
+    this.burst(p.x, p.y, [255, 230, 150], 16, 160);
   }
   offerHeadstart() { if (this.destroyed || this.dead) return; if (this.modal) { this.later(500, () => this.offerHeadstart()); return; } this.offerLevel(true); }
   applyMutation(id) {
@@ -1279,10 +1300,12 @@ class MicrobeGame {
   fmtTime(s) { s = floor(s); return floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
 
   calcDNA() {
-    return D.computeDNA({
+    const dn = D.computeDNA({
       biomass: this.stats.biomass, depthsCleared: this.victory ? 5 : this.depthsCleared, miniKills: this.stats.miniKills, finalKills: this.stats.finalKills,
       discMicrobes: this.disc.microbes.length, discMutations: this.disc.mutations.length, victory: this.victory, dnaMult: this.dnaMult, harvest: this.genome.harvest | 0,
     });
+    if (this.bonusDNA) dn.total += this.bonusDNA;
+    return dn;
   }
   result() {
     const dn = this.calcDNA();
