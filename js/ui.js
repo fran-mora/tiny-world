@@ -196,8 +196,8 @@ export function confirm(title, text, okLabel = 'Confirm', cls = 'btn-primary') {
 export function closeTopModal() { const c = openStack[openStack.length - 1]; if (c) { c(); return true; } return false; }
 
 // ---------- coach marks ----------
-let coachEls = [];
-export function clearCoach() { coachEls.forEach((e) => e.remove()); coachEls = []; }
+let coachEls = [], coachTimer = null;
+export function clearCoach() { coachEls.forEach((e) => e.remove()); coachEls = []; if (coachTimer) { clearInterval(coachTimer); coachTimer = null; } }
 export function coach(target, text, { onOk = null, okLabel = null, place = 'auto' } = {}) {
   clearCoach();
   const host = document.getElementById('app');
@@ -218,6 +218,18 @@ export function coach(target, text, { onOk = null, okLabel = null, place = 'auto
   box.style.setProperty('--ax', (r.left - hr.left + r.width / 2 - left) + 'px');
   if (onOk) box.addEventListener('click', () => { clearCoach(); onOk(); });
   coachEls = [ring, box];
+  // keep the ring and bubble glued to the target if the layout shifts (e.g. a new dock button appears)
+  coachTimer = setInterval(() => {
+    if (!target.isConnected || target.offsetParent === null) { clearCoach(); return; }
+    const r2 = target.getBoundingClientRect(), h2 = host.getBoundingClientRect();
+    ring.style.left = r2.left - h2.left - 4 + 'px'; ring.style.top = r2.top - h2.top - 4 + 'px';
+    ring.style.width = r2.width + 8 + 'px'; ring.style.height = r2.height + 8 + 'px';
+    let l2 = r2.left - h2.left + r2.width / 2 - box.offsetWidth / 2;
+    l2 = Math.max(12, Math.min(h2.width - box.offsetWidth - 12, l2));
+    box.style.left = l2 + 'px';
+    box.style.top = (below ? r2.bottom - h2.top + 14 : r2.top - h2.top - box.offsetHeight - 14) + 'px';
+    box.style.setProperty('--ax', (r2.left - h2.left + r2.width / 2 - l2) + 'px');
+  }, 400);
   return { remove: clearCoach };
 }
 

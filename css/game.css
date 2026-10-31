@@ -161,4 +161,5 @@
   .dock-btn span.lbl { display: none; }
 }
 
-.build-tag { text-align: center; font-size: 12px; font-weight: 700; color: var(--text-faint); letter-spacing: .04em; font-variant-numeric: tabular-nums; }
+.build-tag { appearance: none; background: transparent; border: 0; cursor: pointer; text-align: center; font-size: 12px; font-weight: 700; color: var(--text-faint); letter-spacing: .04em; font-variant-numeric: tabular-nums; padding: 6px; }
+.build-tag u { color: var(--text-dim); text-underline-offset: 3px; }

@@ -320,6 +320,7 @@ export function openMenu(game) {
     el('div.list', {}, [
       el('button.btn.btn-block', { onclick: () => howToPlay() }, [icon('book'), 'How to play']),
       el('button.btn.btn-block', { onclick: () => offlineHelp() }, [icon('globe'), 'Playing offline']),
+      el('button.btn.btn-block', { onclick: () => import('./changelog.js').then((m) => whatsNew(m.CHANGELOG, BUILD)) }, [icon('star'), 'What\u2019s new']),
     ]),
     el('div.section-title', {}, 'Save data'),
     el('div.list', {}, [
@@ -428,3 +429,12 @@ export function awayDialog(summary) {
 function fitCanvas(c) { if (c && c.style) { c.style.width = '100%'; c.style.height = '100%'; } return c; }
 
 const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : '');
+
+export function whatsNew(log, current) {
+  audio.sfx('click');
+  const body = log.map((e) => el('div.card', { style: { marginBottom: '10px', borderColor: e.build === current ? 'var(--leaf)' : '' } }, [
+    el('div.row.between', {}, [el('div', { style: { fontWeight: 850 } }, e.title), el('span.tag', { class: e.build === current ? 'good' : '' }, e.build === current ? `Build ${e.build} \u00b7 you have this` : `Build ${e.build}`)]),
+    el('ul', { style: { margin: '6px 0 0', paddingLeft: '18px', color: 'var(--text-dim)', fontSize: '13.5px' } }, e.notes.map((n) => el('li', { style: { marginTop: '3px' } }, n))),
+  ]));
+  return sheet({ title: 'What\u2019s new', body });
+}

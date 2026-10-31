@@ -11,6 +11,7 @@ import { PLANTS, ANIMALS, PLANT, ANIMAL, ERAS } from './data/species.js';
 import { MILESTONES, activeGoals } from './data/milestones.js';
 import * as Screens from './screens.js';
 import { BUILD, BUILD_TIME } from './version.js';
+import { CHANGELOG } from './changelog.js';
 
 const MAX_TICKS_PER_FRAME = 40;
 const OFFLINE_TICK_CAP = 2400; // 20 game days
@@ -92,7 +93,7 @@ class Game {
     const play = el('button.btn.btn-primary.btn-lg.btn-block', { onclick: () => this.start() }, [icon('play'), fresh ? 'Begin' : 'Continue']);
     this.titleEl = el('div.title-screen', {}, [
       el('div.logo', {}, [el('h1', {}, ['Tiny', el('br'), 'World']), el('div.sub', {}, fresh ? 'Grow a living planet from a single cell' : `World #${st.worldNumber} · Era ${roman(st.era)} · ${ERAS[st.era].name}`)]),
-      el('div.title-actions', {}, [play, hint, el('div.build-tag', {}, `Build ${BUILD} · ${BUILD_TIME}`)]),
+      el('div.title-actions', {}, [play, hint, el('button.build-tag', { onclick: () => Screens.whatsNew(CHANGELOG, BUILD) }, [`Build ${BUILD} · ${BUILD_TIME} · `, el('u', {}, 'What\u2019s new')])]),
     ]);
     document.getElementById('app').appendChild(this.titleEl);
   }
