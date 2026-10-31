@@ -236,7 +236,9 @@ class MicrobeGame {
     }
   }
   descend() {
-    if (this.trans) return;
+    if (this.trans || this.dead || this.victory) return;
+    if (this.descendedFrom === this.depth) return; // never descend twice from the same depth
+    this.descendedFrom = this.depth;
     this.depthsCleared = max(this.depthsCleared, this.depth);
     if (this.depth >= 5) { this.win(); return; }
     this.sfx('descend'); this.buzz([20, 40, 20]);
@@ -390,7 +392,7 @@ class MicrobeGame {
     // depth progression
     if (!this.dead && !this.victory && !this.trans) {
       if (this.depthTime >= this.D.dur) {
-        if (this.D.boss && !this.bossDefeated) { if (!this.bossSpawned) this.spawnBoss(); }
+        if (this.D.boss) { if (!this.bossSpawned) this.spawnBoss(); } // boss death schedules the descent / victory
         else this.descend();
       }
       // phage swarms
