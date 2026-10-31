@@ -39,7 +39,7 @@ class Game {
 
     // modules (models & microbe are separate files; fall back gracefully)
     this.Models = await import('./planet/models.js').catch((e) => { console.warn('models.js failed, using stub', e); return import('./planet/models-stub.js'); });
-    this.Microbe = await import('./microbe/index.js').catch((e) => { console.warn('microbe module failed', e); return null; });
+    this.Microbe = await import('./microbe/index.js').catch((e) => { console.warn('microbe module failed, using fallback', e); return import('./microbe-fallback.js'); });
 
     this.world = new World(st.seed);
     this.eco = new Ecosystem(this.world, this, st.planet);
