@@ -1,5 +1,6 @@
 // Player-facing release notes, newest first. Shown from the build tag on the title screen.
 export const CHANGELOG = [
+  { build: 11, title: 'Named worlds & storms', notes: ['Every world gets a name: shown on the title screen, rename it in Menu.', 'Lightning flickers in the storm clouds of the young, lifeless planet.'] },
   { build: 10, title: 'Seed Exchange', notes: ['From Era IV, trade spare Bloom for DNA in Research. The price rises with each trade and cools down over time.'] },
   { build: 9, title: 'Hints & release notes', notes: ['Tutorial hints stay attached to their buttons when the layout changes.', 'This "What’s new" list: tap the build number on the title screen.'] },
   { build: 8, title: 'Battery saver', notes: ['The planet redraws at half rate while you are just watching, and goes back to full smoothness as soon as you touch it.'] },

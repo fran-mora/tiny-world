@@ -92,7 +92,7 @@ class Game {
     if (hint) hint.addEventListener('click', () => Screens.offlineHelp());
     const play = el('button.btn.btn-primary.btn-lg.btn-block', { onclick: () => this.start() }, [icon('play'), fresh ? 'Begin' : 'Continue']);
     this.titleEl = el('div.title-screen', {}, [
-      el('div.logo', {}, [el('h1', {}, ['Tiny', el('br'), 'World']), el('div.sub', {}, fresh ? 'Grow a living planet from a single cell' : `World #${st.worldNumber} · Era ${roman(st.era)} · ${ERAS[st.era].name}`)]),
+      el('div.logo', {}, [el('h1', {}, ['Tiny', el('br'), 'World']), el('div.sub', {}, fresh ? `Grow ${st.worldName || 'a living planet'} from a single cell` : `${st.worldName || 'World #' + st.worldNumber} · Era ${roman(st.era)} · ${ERAS[st.era].name}`)]),
       el('div.title-actions', {}, [play, hint, el('button.build-tag', { onclick: () => Screens.whatsNew(CHANGELOG, BUILD) }, [`Build ${BUILD} · ${BUILD_TIME} · `, el('u', {}, 'What\u2019s new')])]),
     ]);
     document.getElementById('app').appendChild(this.titleEl);

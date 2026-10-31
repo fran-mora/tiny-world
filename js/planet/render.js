@@ -101,6 +101,10 @@ export class PlanetRenderer {
     this.buildMarker();
     this.particles = new Particles(this.planet, 900);
     this.clouds = new Clouds(this, this.M);
+    // lightning for the stormy primordial world (light is always present so shaders never recompile)
+    this.bolt = new THREE.PointLight('#cfe0ff', 0, 9, 1.5);
+    this.planet.add(this.bolt);
+    this.boltT = 0; this.nextBolt = 2;
     this.buildDecorStatic();
   }
 
@@ -651,10 +655,29 @@ export class PlanetRenderer {
     }
 
     this.clouds.update(dt);
+    this.updateLightning(dt);
     this.particles.update(dt);
     this.rig.update(dt);
     if (this.autoRotate) this.rig.yaw += dt * this.autoRotate;
     this.renderer.render(this.scene, this.camera);
+  }
+
+  updateLightning(dt) {
+    const era = this.eco.game.state.era;
+    this.nextBolt -= dt;
+    if (this.boltT > 0) {
+      this.boltT -= dt;
+      const flick = this.boltT > 0.12 ? 1 : this.boltT > 0.08 ? 0.15 : this.boltT > 0.03 ? 0.8 : 0;
+      this.bolt.intensity = flick * 60;
+      if (this.boltT <= 0) this.bolt.intensity = 0;
+    } else if (era <= 2 && this.nextBolt <= 0 && this.clouds.list.length) {
+      const c = this.clouds.list[Math.floor(Math.random() * this.clouds.list.length)];
+      const p = this.clouds.posOf(c);
+      this.bolt.position.copy(p).multiplyScalar(0.97);
+      this.boltT = 0.2;
+      this.nextBolt = (era === 1 ? 2.5 : 6) + Math.random() * 5;
+      this.particles.burst(p, new THREE.Color('#e8f0ff'), 6, { speed: 0.6, up: -1.5, life: 0.25, size: 16 });
+    }
   }
 
   resize() {

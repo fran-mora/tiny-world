@@ -6,7 +6,7 @@ import { PLANTS, ANIMALS, PLANT, ANIMAL, ERAS, ANIMAL_ADAPTS, PLANT_ADAPTS, adap
 import { MILESTONES, activeGoals } from './data/milestones.js';
 import { thumbEl } from './planet/thumbs.js';
 import { roman, hexA } from './planet/view.js';
-import { store } from './state.js';
+import { store, randomWorldName } from './state.js';
 import { BUILD, BUILD_TIME } from './version.js';
 
 // ------------------------------------------------------------------ research
@@ -322,6 +322,8 @@ export function openMenu(game) {
     row('hand', 'Vibration', 'Haptic feedback on supported phones', toggle('haptics', (v) => { window.__tw_haptics = v; })),
     row('bolt', 'Battery saver', 'Lower resolution and frame rate, no shadows', toggle('battery', () => game.applyQuality())),
     row('sun', 'Shadows', 'Prettier, but uses more battery', toggle('shadows', () => game.applyQuality())),
+    el('div.section-title', {}, 'Your world'),
+    row('globe', st.worldName || 'Unnamed world', `World #${st.worldNumber}`, el('button.btn', { style: { minHeight: '36px', padding: '6px 12px', fontSize: '13px' }, onclick: () => renameWorld(game) }, 'Rename')),
     el('div.section-title', {}, 'Help'),
     el('div.list', {}, [
       el('button.btn.btn-block', { onclick: () => howToPlay() }, [icon('book'), 'How to play']),
@@ -364,6 +366,20 @@ export function offlineHelp() {
     p('Your progress is saved automatically on this device. Use Menu → Back up to copy your save if you switch browsers.'),
     p(`Offline cache: <b style="color:var(--text)" id="sw-status">${navigator.serviceWorker?.controller ? 'ready ✓' : 'not ready yet. Reload once while online.'}</b>`),
   ] });
+}
+
+function renameWorld(game) {
+  const st = game.state;
+  const input = el('input', { value: st.worldName || '', maxlength: '24', style: { width: '100%', padding: '12px 14px', borderRadius: '12px', border: '1px solid var(--line-hi)', background: 'rgba(0,0,0,.3)', color: 'var(--text)', fontSize: '17px', fontFamily: 'inherit', fontWeight: '700' } });
+  dialog({
+    title: 'Name your world', body: input,
+    buttons: [
+      { label: 'Save', cls: 'btn-primary', onClick: () => { const v = input.value.trim().slice(0, 24); if (v) { st.worldName = v; game.save(); toast(`Welcome to <b>${v.replace(/[<>&]/g, '')}</b>`, { icon: 'globe' }); } } },
+      { label: 'Random name', cls: '', onClick: () => { input.value = randomWorldName(Math.random() * 1e9); return false; } },
+      { label: 'Cancel', cls: 'btn-ghost' },
+    ],
+  });
+  setTimeout(() => input.focus(), 100);
 }
 
 function backup(game) {

@@ -11,6 +11,7 @@ export function defaultState(seed = (Math.random() * 2 ** 31) >>> 0, worldNumber
     lastActive: Date.now(),
     seed,
     worldNumber,
+    worldName: randomWorldName(seed),
     dna: 0,
     bloom: 30,
     totals: {
@@ -92,6 +93,7 @@ function migrate(s) {
   const d = defaultState(s.seed);
   // shallow-fill missing keys so older saves keep working
   for (const k of Object.keys(d)) if (s[k] === undefined) s[k] = d[k];
+  if (!s.worldName) s.worldName = randomWorldName(s.seed);
   for (const k of Object.keys(d.totals)) if (s.totals[k] === undefined) s.totals[k] = 0;
   for (const k of Object.keys(d.codex)) if (!s.codex[k]) s.codex[k] = {};
   for (const k of Object.keys(d.settings)) if (s.settings[k] === undefined) s.settings[k] = d.settings[k];
@@ -115,4 +117,13 @@ export function addBloom(n) {
 export function spendBloom(n) {
   const s = store.state; if (s.bloom < n - 1e-9) return false;
   s.bloom -= n; store.dirty = true; return true;
+}
+
+const NAME_A = ['Verd', 'Aur', 'Thal', 'Cael', 'Lum', 'Oph', 'Ner', 'Sel', 'Ily', 'Mor', 'Zeph', 'Ast', 'Ery', 'Pell', 'Quil', 'Sor', 'Ven', 'Kal'];
+const NAME_B = ['ana', 'ora', 'is', 'eth', 'ion', 'ara', 'enne', 'ux', 'ea', 'ith', 'ova', 'umi', 'aris', 'elle'];
+const NAME_C = ['', '', '', ' Prime', ' Minor', ' II', ' Nova', ' Major'];
+export function randomWorldName(seed = Math.random() * 1e9) {
+  let x = (seed >>> 0) || 1;
+  const r = () => { x ^= x << 13; x ^= x >>> 17; x ^= x << 5; return ((x >>> 0) % 10000) / 10000; };
+  return NAME_A[Math.floor(r() * NAME_A.length)] + NAME_B[Math.floor(r() * NAME_B.length)] + NAME_C[Math.floor(r() * NAME_C.length)];
 }
