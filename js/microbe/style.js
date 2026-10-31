@@ -153,6 +153,9 @@ const CSS = `
 .mb-disc > div { display: flex; flex-direction: column; align-items: center; width: 64px; font-size: 10.5px; font-weight: 700; color: var(--text-dim); text-align: center; }
 .mb-disc canvas { width: 52px; height: 52px; }
 
+.mb-ended .mb-hud { opacity: 0; transition: opacity .3s; pointer-events: none; }
+.mb-ended .mb-hud * { pointer-events: none !important; }
+.mb-res-ov { background: radial-gradient(ellipse at 50% 30%, rgba(14, 34, 60, .9), rgba(2, 6, 14, .96)); justify-content: flex-start; }
 .mb-flash { position: absolute; inset: 0; z-index: 6; pointer-events: none; background: #fff; opacity: 0; }
 .mb-fade { position: absolute; inset: 0; z-index: 6; pointer-events: none; background: #01040a; opacity: 0; }
 `;

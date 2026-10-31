@@ -1093,6 +1093,7 @@ class MicrobeGame {
 
   // ---------- discovery & toasts ----------
   discover(kind) {
+    if (this.dead || this.victory || this.modal === 'results') return;
     this.seen[kind] = true;
     if (this.codex.microbes && this.codex.microbes[kind]) return;
     if (this.disc.microbes.includes(kind)) return;
@@ -1290,10 +1291,11 @@ class MicrobeGame {
     if (this.levelOv) { this.levelOv.remove(); this.levelOv = null; }
     if (this.pauseOv) { this.pauseOv.remove(); this.pauseOv = null; }
     this.modal = 'results'; this.clearHint();
+    this.root.classList.add('mb-ended');
     const res = this.resultData = this.result();
     const dn = res.breakdown, p = this.p;
     const win = res.victory;
-    const ov = el('div.mb-overlay');
+    const ov = el('div.mb-overlay.mb-res-ov');
     const rows = [
       ['Biomass', dn.biomass, `${fmt(res.biomass)} biomass`],
       ['Depth bonus', dn.depth, `${win ? 5 : this.depthsCleared} depth${this.depthsCleared === 1 ? '' : 's'} cleared`],

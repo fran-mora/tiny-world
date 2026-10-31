@@ -38,12 +38,22 @@ class Game {
     audio.setSfx(st.settings.sfx); audio.setMusic(st.settings.music);
 
     // modules (models & microbe are separate files; fall back gracefully)
-    this.Models = await import('./planet/models.js').catch((e) => { console.warn('models.js failed, using stub', e); return import('./planet/models-stub.js'); });
-    this.Microbe = await import('./microbe/index.js').catch((e) => { console.warn('microbe module failed, using fallback', e); return import('./microbe-fallback.js'); });
+    const okModels = (M) => M && M.MODEL_INFO && M.modelUniforms && ['plantGeometry', 'animalGeometry', 'decorGeometry', 'createModelMaterial'].every((k) => typeof M[k] === 'function');
+    this.Models = await import('./planet/models.js').catch((e) => { console.warn('models.js failed', e); return null; });
+    if (!okModels(this.Models)) this.Models = await import('./planet/models-stub.js');
+    this.Microbe = await import('./microbe/index.js').catch((e) => { console.warn('microbe module failed', e); return null; });
+    if (!this.Microbe || typeof this.Microbe.startMicrobeRun !== 'function') this.Microbe = await import('./microbe-fallback.js');
 
     this.world = new World(st.seed);
     this.eco = new Ecosystem(this.world, this, st.planet);
-    this.renderer = new PlanetRenderer(this.stage, this.world, this.eco, this.Models, st.settings);
+    try {
+      this.renderer = new PlanetRenderer(this.stage, this.world, this.eco, this.Models, st.settings);
+    } catch (e) {
+      console.warn('renderer failed with models.js, retrying with fallback models', e);
+      this.stage.innerHTML = '';
+      this.Models = await import('./planet/models-stub.js');
+      this.renderer = new PlanetRenderer(this.stage, this.world, this.eco, this.Models, st.settings);
+    }
     this.view = new PlanetView(this, this.hud);
     this.wireEco();
     window.__tw = this;
@@ -367,6 +377,7 @@ class Game {
           host: this.mhost, era: st.era, genome: { ...st.genome }, codex: { microbes: { ...st.codex.microbes }, mutations: { ...st.codex.mutations } },
           settings: { ...st.settings }, firstRun: st.totals.runs === 0, dnaMult: 1 + (st.era - 1) * 0.1 + (st.starSeeds || 0) * 0.25,
           onExit: (res) => this.endDive(res),
+          debug: location.search.includes('debug'),
         });
       } catch (e) {
         console.error(e);
