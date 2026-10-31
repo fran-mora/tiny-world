@@ -78,9 +78,9 @@ export class PlanetRenderer {
     this.camera = new THREE.PerspectiveCamera(38, 1, 0.1, 1200);
 
     // lights
-    this.hemi = new THREE.HemisphereLight('#b7d2ff', '#2a2018', 0.55);
+    this.hemi = new THREE.HemisphereLight('#b7d2ff', '#2a2018', 0.8);
     s.add(this.hemi);
-    this.amb = new THREE.AmbientLight('#3a5a9a', 0.22);
+    this.amb = new THREE.AmbientLight('#4a6ab0', 0.35);
     s.add(this.amb);
     const sun = new THREE.DirectionalLight('#fff0d4', 2.6);
     sun.castShadow = true;
@@ -602,10 +602,12 @@ export class PlanetRenderer {
     this.stars.material.uniforms.uTime.value = this.time;
     this.stars.material.uniforms.uPR.value = this.pixelRatio;
 
-    // sun orbit (one revolution per game day)
-    const dayFrac = (eco.day % 1);
-    const ang = dayFrac * Math.PI * 2 + 0.6;
-    const sd = new THREE.Vector3(Math.cos(ang), 0.32, Math.sin(ang)).normalize();
+    // key light follows the camera (offset to the side) so the side you look at stays readable;
+    // it drifts slowly so dusk sweeps across now and then and night-glowing life can show
+    const cd = this.camera.position.clone().normalize();
+    const drift = 0.75 + Math.sin(this.time * 0.045) * 0.75;
+    const sd = cd.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), drift);
+    sd.y += 0.35; sd.normalize();
     this.sun.position.copy(sd).multiplyScalar(40);
     this.sun.target.position.set(0, 0, 0);
     this.sunSprite.position.copy(sd).multiplyScalar(420);
