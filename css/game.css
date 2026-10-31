@@ -103,7 +103,7 @@
 .logo h1 { font-size: 54px; line-height: .95; font-weight: 900; letter-spacing: -0.03em;
   background: linear-gradient(180deg, #ffffff 10%, #b7f5d3 55%, #6fe3ff 100%); -webkit-background-clip: text; background-clip: text; color: transparent;
   filter: drop-shadow(0 4px 30px rgba(111, 227, 255, .35)); }
-.logo .sub { margin-top: 10px; color: var(--text-dim); font-size: 15px; font-weight: 650; letter-spacing: .02em; }
+.logo .sub { margin-top: 10px; color: #cfe0f5; font-size: 15px; font-weight: 650; letter-spacing: .02em; text-shadow: 0 2px 12px rgba(0,0,0,.9), 0 0 2px rgba(0,0,0,.8); }
 .title-actions { width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 10px; align-items: stretch; }
 .install-hint { font-size: 12.5px; color: var(--text-dim); text-align: center; padding: 10px 12px; border-radius: 14px; background: rgba(255,255,255,.05); border: 1px solid var(--line); }
 .install-hint b { color: var(--text); }

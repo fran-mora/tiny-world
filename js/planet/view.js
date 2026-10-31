@@ -304,7 +304,7 @@ export class PlanetView {
     const hit = r.pick(x, y);
     if (hit.tile == null) return;
     const rig = r.rig;
-    rig.flyTo(r.tileWorld(hit.tile), rig.tDist > 20 ? 16 : 30);
+    rig.flyTo(r.tileWorld(hit.tile), rig.tDist > 20 ? 16 : r.fitDist(1.1));
   }
 
   // ---------------------------------------------------------------- inspect

@@ -96,7 +96,7 @@ export const ANIMALS = [
     icon: 'moth', color: '#c7f0ff', role: 'Pollinator',
     desc: 'A softly glowing moth that sips nectar and spreads pollen from flower to flower.',
     flying: true, diet: { nectar: 1 }, speed: 1.2, sense: 2, size: 0.12,
-    life: 10, mature: 1.5, litter: [1, 3], breedEnergy: 0.75, metabolism: 0.55,
+    life: 10, mature: 1.5, litter: [1, 2], breedEnergy: 0.75, metabolism: 0.45,
     temp: [0.15, 0.95], o2Min: 5, cap: 90,
   },
   {
@@ -105,14 +105,14 @@ export const ANIMALS = [
     desc: 'Schools of shimmering fish that graze on algae in the shallows.',
     aquatic: true, diet: { algae: 1 }, speed: 1.1, sense: 2, size: 0.16,
     life: 14, mature: 2.5, litter: [1, 3], breedEnergy: 0.7, metabolism: 0.45,
-    temp: [0.05, 1.0], o2Min: 6, cap: 90,
+    temp: [0.05, 1.0], o2Min: 6, cap: 60,
   },
   {
     id: 'hopper', name: 'Puffhop', era: 4, dna: 100, cost: 20, group: 3,
     icon: 'paw', color: '#f3d7b0', role: 'Grazer',
     desc: 'A round, fluffy grazer that nibbles grass and moss and breeds quickly.',
     diet: { cover: 1, browse: 0.3 }, speed: 0.9, sense: 2, size: 0.17,
-    life: 12, mature: 2.5, litter: [1, 3], breedEnergy: 0.72, metabolism: 0.5,
+    life: 12, mature: 2.5, litter: [1, 2], breedEnergy: 0.72, metabolism: 0.45,
     temp: [0.08, 0.9], o2Min: 9, cap: 110, hops: true,
   },
   {

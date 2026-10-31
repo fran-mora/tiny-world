@@ -199,7 +199,7 @@ export class Ecosystem {
     for (let k = 0; k < count; k++) {
       const t = tiles[k % tiles.length];
       const j = 0.05;
-      const a = this.spawnAnimal(spId, w.pos[t * 3] + this.rng.float(-j, j), w.pos[t * 3 + 1] + this.rng.float(-j, j), w.pos[t * 3 + 2] + this.rng.float(-j, j), { tile: t, energy: 0.8 });
+      const a = this.spawnAnimal(spId, w.pos[t * 3] + this.rng.float(-j, j), w.pos[t * 3 + 1] + this.rng.float(-j, j), w.pos[t * 3 + 2] + this.rng.float(-j, j), { tile: t, energy: 0.85, cooldown: 1.2 });
       if (a) out.push(a);
     }
     if (!this.speciesBaseline[spId]) this.speciesBaseline[spId] = { speed: 1, size: 1, meta: 1, hardy: 0, day: this.day };
@@ -384,7 +384,7 @@ export class Ecosystem {
     const dt = DT;
     const st = this.game.state;
     if (st.research.algae) {
-      const fishEat = (this.popCount.fish || 0) * 0.0009;
+      const fishEat = (this.popCount.fish || 0) * 0.0004;
       this.algae += dt * (0.42 * this.algae * (1 - this.algae) - fishEat * this.algae);
       this.algae = clamp(this.algae, 0.01, 1);
     }
@@ -487,7 +487,7 @@ export class Ecosystem {
     }
     if (a.state === 2 && a.timer > 0) { a.moving = 1.3; return; }
 
-    const hungry = a.energy < 0.78;
+    const hungry = a.energy < 0.72;
     if (hungry) {
       if (this.feed(a, sp, keen)) return;
     }
@@ -524,7 +524,7 @@ export class Ecosystem {
 
   feed(a, sp, keen) {
     const w = this.world, d = sp.diet;
-    const bite = 0.06 * a.genes.size;
+    const bite = 0.03 * a.genes.size;
     // ----- predators
     if (d.prey) {
       if (a.cooldown > 0.6 && a.energy > 0.35) return false; // digesting
@@ -569,7 +569,7 @@ export class Ecosystem {
     }
     // ----- fish (algae)
     if (d.algae) {
-      if (this.algae > 0.03) { a.energy = Math.min(1, a.energy + this.algae * 0.025); this.algae = Math.max(0.01, this.algae - 0.00004); }
+      if (this.algae > 0.03) { a.energy = Math.min(1, a.energy + this.algae * 0.025); this.algae = Math.max(0.01, this.algae - 0.000006); }
       return false;
     }
     // ----- herbivores & co: scan current tile and neighbours for the best food
@@ -577,7 +577,7 @@ export class Ecosystem {
     const consider = (t) => {
       if (!sp.flying && w.ocean[t]) return;
       let s = 0, kind = 0;
-      if (d.cover && this.coverSp[t] && this.cover[t] > 0.12) { const v = this.cover[t] * d.cover * PLANT[COVER_IDS[this.coverSp[t] - 1]].food; if (v > s) { s = v; kind = 1; } }
+      if (d.cover && this.coverSp[t] && this.cover[t] > 0.16) { const v = this.cover[t] * d.cover * PLANT[COVER_IDS[this.coverSp[t] - 1]].food; if (v > s) { s = v; kind = 1; } }
       const pi = this.plantAt[t];
       if (pi >= 0) {
         const p = this.plants[pi];
@@ -592,7 +592,7 @@ export class Ecosystem {
       // crowding penalty
       if (s > 0) {
         let crowd = 0;
-        for (let j = this.tileHead[t]; j >= 0; j = this.nextInTile[j]) if (this.animals[j].sp === a.sp) crowd++;
+        for (let j = this.tileHead[t]; j >= 0; j = this.nextInTile[j]) { const b = this.animals[j]; if (b !== a && b.sp === a.sp) crowd++; }
         s /= 1 + crowd * 0.35;
       }
       if (t === a.tile) s *= 1.25;
@@ -612,9 +612,10 @@ export class Ecosystem {
       a.moving = sp.flying ? 0.15 : 0;
       a.state = 5;
       if (bestKind === 1) {
-        const take = Math.min(this.cover[bestT], bite * 0.9);
+        // grazing never strips the roots: cover can't be eaten below a small floor, so it regrows
+        const take = Math.max(0, Math.min(this.cover[bestT] - 0.07, bite));
         this.cover[bestT] -= take; this.changedTiles.add(bestT); this.dirtyTiles = true;
-        a.energy = Math.min(1, a.energy + take * 1.5 * PLANT[COVER_IDS[this.coverSp[bestT] - 1]].food);
+        a.energy = Math.min(1, a.energy + take * 2.6 * PLANT[COVER_IDS[this.coverSp[bestT] - 1]].food);
       } else if (bestKind === 2) {
         const p = this.plants[this.plantAt[bestT]]; const ps = PLANTS[p.sp];
         const dmg = 0.05 * a.genes.size * (1 - this.adaptLevel(ps.id, 'thorns') * 0.3);
@@ -623,7 +624,7 @@ export class Ecosystem {
       } else if (bestKind === 3) {
         const p = this.plants[this.plantAt[bestT]];
         p.pollen = Math.min(1, p.pollen + 0.6);
-        a.energy = Math.min(1, a.energy + 0.12);
+        a.energy = Math.min(1, a.energy + 0.2);
         a.lastPlant = bestT; this.stats.pollinations++;
         this.emit('pollinate', { a, p });
       } else if (bestKind === 4) {
@@ -652,7 +653,7 @@ export class Ecosystem {
     const check = (t) => {
       for (let j = this.tileHead[t]; j >= 0 && !mate; j = this.nextInTile[j]) {
         const b = this.animals[j];
-        if (b !== a && !b.dead && b.sp === a.sp && b.age > sp.mature && b.energy > 0.45) mate = b;
+        if (b !== a && !b.dead && b.sp === a.sp && b.age > sp.mature && b.energy > 0.5) mate = b;
       }
     };
     check(a.tile);
@@ -673,12 +674,12 @@ export class Ecosystem {
       }
       genes.hardy = clamp((a.genes.hardy + mate.genes.hardy) / 2 + this.rng.gauss(0, 0.03), 0, 0.6);
       const child = this.spawnAnimal(sp.id, a.x + this.rng.float(-0.01, 0.01), a.y + this.rng.float(-0.01, 0.01), a.z + this.rng.float(-0.01, 0.01), {
-        tile: a.tile, energy: 0.45, age: 0, cooldown: sp.mature, genes, gen: Math.max(a.gen, mate.gen) + 1,
+        tile: a.tile, energy: 0.55, age: 0, cooldown: sp.mature, genes, gen: Math.max(a.gen, mate.gen) + 1,
       });
       if (!child) break;
       this.emit('birth', child);
     }
-    a.energy -= 0.18 * n + 0.05; mate.energy -= 0.08;
+    a.energy -= 0.11 * n + 0.04; mate.energy -= 0.06;
     a.cooldown = sp.flying || sp.aquatic ? 0.9 : 1.3; mate.cooldown = Math.max(mate.cooldown, 0.6);
   }
 
@@ -692,6 +693,7 @@ export class Ecosystem {
       this.changedTiles.add(a.tile);
     }
     this.stats.died[sp.id] = (this.stats.died[sp.id] || 0) + 1;
+    const ck = sp.id + ':' + cause; (this.stats.causes ||= {})[ck] = (this.stats.causes[ck] || 0) + 1;
     if (cause === 'eaten') this.stats.eaten[sp.id] = (this.stats.eaten[sp.id] || 0) + 1;
     this.emit('death', { a, cause, killer });
     if (this.popCount[sp.id] === 0) this.emit('extinct', sp.id);
@@ -707,7 +709,7 @@ export class Ecosystem {
     let nx = a.x * ca + a.hx * sa, ny = a.y * ca + a.hy * sa, nz = a.z * ca + a.hz * sa;
     const l = Math.hypot(nx, ny, nz); nx /= l; ny /= l; nz /= l;
     const nt = w.nearestTile(nx, ny, nz, a.tile);
-    const blocked = sp.flying ? false : sp.aquatic ? !w.ocean[nt] : w.ocean[nt];
+    const blocked = sp.aquatic ? !w.ocean[nt] : (sp.flying && sp.predator) ? false : !!w.ocean[nt];
     if (blocked) {
       // turn around
       this.turn(a, Math.PI * (0.6 + this.rng.next() * 0.8));

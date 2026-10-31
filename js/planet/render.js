@@ -51,7 +51,7 @@ export class PlanetRenderer {
     r.toneMappingExposure = 1.05;
     r.outputColorSpace = THREE.SRGBColorSpace;
     r.shadowMap.enabled = !!this.settings.shadows && !this.settings.battery;
-    r.shadowMap.type = THREE.PCFSoftShadowMap;
+    r.shadowMap.type = THREE.PCFShadowMap;
     this.renderer = r;
     r.domElement.style.position = 'absolute'; r.domElement.style.inset = '0';
     r.domElement.style.width = '100%'; r.domElement.style.height = '100%';
@@ -657,8 +657,17 @@ export class PlanetRenderer {
     this.renderer.setSize(this.width, this.height, false);
     this.camera.aspect = this.width / this.height;
     // keep planet comfortably in view on tall phones
-    this.camera.fov = this.camera.aspect < 0.7 ? 46 : 38;
+    this.camera.fov = this.camera.aspect < 0.7 ? 52 : 38;
     this.camera.updateProjectionMatrix();
+    if (this.rig) this.rig.maxDist = Math.max(46, this.fitDist() * 1.15);
+  }
+
+  // camera distance at which the whole planet (with atmosphere) fits the narrower screen axis
+  fitDist(margin = 1.12) {
+    const vf = this.camera.fov * Math.PI / 180;
+    const hf = 2 * Math.atan(Math.tan(vf / 2) * this.camera.aspect);
+    const f = Math.min(vf, hf);
+    return (R * margin) / Math.sin(f / 2);
   }
 
   dispose() {

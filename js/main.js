@@ -50,7 +50,7 @@ class Game {
 
     this.mode = 'title';
     this.renderer.autoRotate = 0.05;
-    this.renderer.rig.tDist = this.renderer.rig.dist = 36;
+    this.renderer.rig.tDist = this.renderer.rig.dist = this.renderer.fitDist(1.3);
     this.renderer.rig.enabled = true;
     requestAnimationFrame((t) => this.loop(t));
     setTimeout(() => {
@@ -89,7 +89,7 @@ class Game {
     this.titleEl.style.transition = 'opacity .5s'; this.titleEl.style.opacity = '0';
     setTimeout(() => this.titleEl.remove(), 500);
     this.renderer.autoRotate = 0;
-    this.renderer.rig.tDist = 30;
+    this.renderer.rig.tDist = this.renderer.fitDist(1.1);
     this.hud.classList.remove('hidden-soft');
     this.mode = 'planet';
     this.view.update(true);
@@ -401,7 +401,7 @@ class Game {
       this.renderer.renderer.domElement.style.visibility = '';
       this.hud.classList.remove('hidden-soft');
       audio.music('planet');
-      this.renderer.rig.tDist = 30;
+      this.renderer.rig.tDist = this.renderer.fitDist(1.1);
       this.save();
       this.view.update(true);
       setTimeout(() => this.fade.classList.remove('on'), 80);
@@ -499,7 +499,18 @@ class Game {
   registerSW() {
     if (!('serviceWorker' in navigator)) return;
     if (location.protocol === 'file:') return;
-    navigator.serviceWorker.register('sw.js').catch((e) => console.warn('SW failed', e));
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((reg) => {
+      // check for a newer version whenever the app comes back to the foreground
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
+    }).catch((e) => console.warn('SW failed', e));
+    const hadController = !!navigator.serviceWorker.controller;
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing || !hadController) return; // first install: nothing to refresh
+      refreshing = true;
+      if (this.mode === 'title' || this.mode === 'boot') { this.save(); location.reload(); }
+      else toast('A new version of Tiny World is ready. It will load next time you open the game.', { icon: 'refresh', ms: 4000 });
+    });
   }
 }
 
