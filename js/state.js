@@ -26,7 +26,7 @@ export function defaultState(seed = (Math.random() * 2 ** 31) >>> 0, worldNumber
     era: 1,
     starSeeds: carry?.starSeeds || 0,      // new-world bonus
     planet: null,                          // serialized ecosystem (see planet/sim.js)
-    settings: carry?.settings || { sfx: true, music: true, haptics: true, battery: false, shadows: true, speed: 1 },
+    settings: carry?.settings || { sfx: true, music: true, haptics: true, battery: false, shadows: true, speed: 3 },
     tutorial: { done: {}, ...(carry ? { skip: true } : {}) },
     flags: {},
     runHistory: [],

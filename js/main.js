@@ -72,6 +72,8 @@ class Game {
 
     document.addEventListener('visibilitychange', () => this.onVisibility());
     window.addEventListener('pagehide', () => this.save());
+    // iOS suspends audio in the background; resume it on the next touch
+    document.addEventListener('pointerdown', () => { if (audio.ready) audio.resume(); }, { passive: true });
     window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && this.mode === 'planet') { if (!closeTopModal()) this.view.closeTray(); } });
     this.registerSW();
   }
