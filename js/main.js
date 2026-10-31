@@ -291,6 +291,23 @@ class Game {
     return true;
   }
 
+  // Seed Exchange: trade surplus Bloom for DNA from Era IV. The price rises with each trade and
+  // cools down again over real time, so it supplements diving rather than replacing it.
+  tradeInfo() {
+    const f = this.state.flags, now = Date.now();
+    const heat = Math.max(0, (f.tradeHeat || 0) - (now - (f.tradeT || now)) / 120000);
+    return { available: this.state.era >= 4, price: Math.round(100 * Math.pow(1.18, heat)), dna: 3, heat };
+  }
+  tradeBloom() {
+    const t = this.tradeInfo(), f = this.state.flags;
+    if (!t.available) return false;
+    if (!spendBloom(t.price)) { audio.sfx('error'); toast(`Needs ${t.price} Bloom.`, { icon: 'bloom' }); return false; }
+    addDNA(t.dna);
+    f.tradeHeat = t.heat + 1; f.tradeT = Date.now();
+    audio.sfx('coin'); haptic(8);
+    return true;
+  }
+
   buyAdapt(spId, aId, cost) {
     const st = this.state;
     if (!spendDNA(cost)) { audio.sfx('error'); return false; }

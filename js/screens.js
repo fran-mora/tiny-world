@@ -17,13 +17,19 @@ export function openResearch(game, tab = 'life', focusId = null) {
   const tabs = [['life', 'Species'], ['evolve', 'Evolve'], ['genome', 'Genome']];
   for (const [id, label] of tabs) { const b = el('button', { onclick: () => { audio.sfx('tick'); current = id; render(); } }, label); segBtns[id] = b; seg.appendChild(b); }
   const dnaLine = el('div.row', { style: { marginBottom: '10px' } });
+  const tradeLine = el('div');
   const content = el('div');
-  const sh = sheet({ title: 'Research', body: [seg, dnaLine, content] });
+  const sh = sheet({ title: 'Research', body: [seg, dnaLine, tradeLine, content] });
   const render = () => {
     for (const [id, b] of Object.entries(segBtns)) b.classList.toggle('on', id === current);
     dnaLine.replaceChildren(el('span.chip', {}, [icon('dna'), el('span.dna-c.num', {}, fmt(game.state.dna))]), el('span.small.dim.grow', {}, current === 'genome' ? 'Permanent upgrades for your microbe. They carry over to new worlds.' : current === 'evolve' ? 'Adapt your species to thrive in harsher places.' : 'Unlock new life for your planet.'));
     dnaLine.firstChild.querySelector('svg').style.color = 'var(--dna)';
     content.replaceChildren(...(current === 'life' ? lifeTab() : current === 'evolve' ? evolveTab() : genomeTab()));
+    const t = game.tradeInfo();
+    tradeLine.replaceChildren(t.available ? el('div.card.row', { style: { marginBottom: '12px', padding: '10px 12px' } }, [
+      el('div.grow', {}, [el('div', { style: { fontWeight: 800, fontSize: '14px' } }, 'Seed Exchange'), el('div.small.dim', {}, `You have ${fmt(game.state.bloom)} Bloom. The price rises with each trade and cools down over time.`)]),
+      el('button.btn.btn-bloom', { class: game.state.bloom >= t.price ? '' : 'disabled', style: { minHeight: '38px', padding: '8px 12px', fontSize: '13px' }, onclick: () => { if (game.tradeBloom()) render(); } }, [icon('bloom', 'sm'), fmt(t.price), ' \u2192 ', icon('dna', 'sm'), String(t.dna)]),
+    ]) : '');
   };
   const lifeTab = () => {
     const out = [];
