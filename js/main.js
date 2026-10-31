@@ -144,6 +144,7 @@ class Game {
         this.acc -= n;
       }
     }
+    if (this.mode === 'planet') this.autoQuality(dt);
     if (this.mode === 'planet' || this.mode === 'title') {
       const skip = st.settings.battery && (this.frameCount & 1);
       if (!skip) this.renderer.render(st.settings.battery ? dt * 2 : dt, this.speed > 0 ? this.acc : 1);
@@ -152,6 +153,25 @@ class Game {
     this.secTimer += dt; this.saveTimer += dt;
     if (this.secTimer > 1) { this.secTimer = 0; if (this.mode === 'planet' || this.mode === 'microbe') this.checkProgress(); }
     if (this.saveTimer > 15 && this.mode !== 'title') { this.saveTimer = 0; this.save(); }
+  }
+
+  // If the phone struggles in the first seconds of play, quietly drop shadows and resolution.
+  autoQuality(dt) {
+    const q = (this._aq ||= { t: 0, frames: 0, done: false });
+    if (q.done) return;
+    q.t += dt; q.frames++;
+    if (q.t < 6) return;
+    q.done = true;
+    const fps = q.frames / q.t;
+    const s = this.state.settings;
+    if (fps < 34 && s.shadows && !s.battery) {
+      s.shadows = false;
+      this.renderer.pixelRatio = Math.min(this.renderer.pixelRatio, 1.3);
+      this.applyQuality();
+      this.renderer.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.3));
+      this.renderer.resize();
+      console.info('auto quality: shadows off, fps was', fps.toFixed(1));
+    }
   }
 
   tick() {
