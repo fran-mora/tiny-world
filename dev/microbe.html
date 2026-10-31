@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Microbe Dev</title>
+<link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<div id="app"><div id="host" style="position:absolute;inset:0"></div></div>
+<script type="module">
+import { startMicrobeRun } from '../js/microbe/index.js';
+import { audio } from '../js/audio.js';
+const q = new URLSearchParams(location.search);
+const era = parseInt(q.get('era') || '1', 10);
+const genome = q.get('genome') ? JSON.parse(q.get('genome')) : {};
+window.__exits = [];
+const start = () => {
+  window.__run = startMicrobeRun({
+    host: document.getElementById('host'),
+    era, genome, codex: { microbes: {}, mutations: {} },
+    settings: { sfx: true, music: q.get('music') !== '0', haptics: true, battery: q.get('battery') === '1' },
+    firstRun: q.get('first') === '1', dnaMult: parseFloat(q.get('mult') || '1'), debug: true,
+    onExit: (r) => { window.__exits.push(r); console.log('onExit', JSON.stringify(r)); },
+  });
+};
+// audio needs a user gesture
+window.addEventListener('pointerdown', () => audio.init(), { once: true });
+window.addEventListener('keydown', () => audio.init(), { once: true });
+start();
+</script>
+</body>
+</html>

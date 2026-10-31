@@ -597,7 +597,7 @@ class MicrobeGame {
             e.x = p.x + cos(a) * rr; e.y = p.y + sin(a) * rr; e.ang = a + PI;
             this.hurt(2.4 * dt, null, { dot: true });
             if (!e.fx || e.fx < T) { e.fx = T + 0.5; this.sparkle(e.x, e.y, [255, 120, 160], 1); }
-            continue_latched(e); ents[wi++] = e; continue;
+            ents[wi++] = e; continue;
           }
           if (e.stun > 0) { tx = 0; ty = 0; sp = 0; }
           else if (!this.dead && d < 520) { chase(1); steer = 3.5; }
@@ -633,7 +633,6 @@ class MicrobeGame {
       if (e.alive) ents[wi++] = e;
     }
     ents.length = wi;
-    function continue_latched() {}
     // offensive auras: clouds, symbionts
     this.updateAuras(dt);
   }
