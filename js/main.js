@@ -188,7 +188,7 @@ class Game {
       const st = this.state;
       if (st.era >= 3) {
         const n = eco.thriving().n;
-        if (n > 0) addDNA(Math.round(n * (1 + (st.starSeeds || 0) * 0.25)));
+        if (n > 0) addDNA(Math.round(n * 0.4 * (1 + (st.starSeeds || 0) * 0.25)));
       }
       if ((eco.popCount.hopper || 0) > 0 && (eco.popCount.prowler || 0) > 0) st.flags.coexistDays = (st.flags.coexistDays || 0) + 1;
       else st.flags.coexistDays = 0;

@@ -263,7 +263,9 @@ export class Ecosystem {
       p.age += dt;
       p.suit = suit;
       if (p.growth < 1) {
-        const g = dt / sp.grow * (0.25 + 0.75 * suit) * (0.5 + 0.5 * p.health);
+        let g = dt / sp.grow * (0.25 + 0.75 * suit) * (0.5 + 0.5 * p.health);
+        // the World Tree only grows well on a thriving, diverse world
+        if (sp.unique) g *= Math.max(0.12, Math.min(1, (this.thrivingN || 0) / 12));
         const was = p.growth;
         p.growth = Math.min(1, p.growth + g);
         if (was < 1 && p.growth >= 1) this.emit('plantMature', p);
@@ -407,10 +409,10 @@ export class Ecosystem {
       let animalLoad = 0;
       for (const a of this.animals) animalLoad += ANIMALS[a.sp].size;
       this.plantO2 = plantO2;
-      this.o2Target = 0.4 + 6.6 * (st.research.algae ? this.algae : 0) + 18 * (1 - Math.exp(-plantO2 / 320)) - animalLoad * 0.012;
-      this.bloomRate = bloom * 0.9 + (st.research.algae ? this.algae * 2 : 0);
+      this.o2Target = 0.4 + 6.6 * (st.research.algae ? this.algae : 0) + 19 * (1 - Math.exp(-plantO2 / 700)) - animalLoad * 0.012;
+      this.bloomRate = bloom * 0.5 + (st.research.algae ? this.algae * 2 : 0);
     }
-    this.oxygen += (this.o2Target - this.oxygen) * Math.min(1, dt * 0.35);
+    this.oxygen += (this.o2Target - this.oxygen) * Math.min(1, dt * 0.15);
     this.oxygen = Math.max(0.1, this.oxygen);
     this.bloomGain = this.bloomRate * dt;   // read by game loop
   }
@@ -897,6 +899,7 @@ export class Ecosystem {
   }
 
   record() {
+    this.thrivingN = this.thriving().n;
     const h = this.history;
     h.t.push(+this.day.toFixed(2));
     h.o2.push(+this.oxygen.toFixed(2));

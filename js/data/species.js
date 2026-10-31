@@ -84,7 +84,7 @@ export const PLANTS = [
     icon: 'star', color: '#a8ffdc', unique: true,
     desc: 'A legendary tree whose roots reach the planet\'s core. When it fully grows, your world is truly alive.',
     pref: { temp: [0.15, 0.55, 0.9], moist: [0.3, 0.6, 1.0], fert: 0.55 },
-    grow: 12, life: 99999, seed: 0, range: 0, o2: 8, bloom: 12, browse: 0, pollinated: false,
+    grow: 24, life: 99999, seed: 0, range: 0, o2: 8, bloom: 12, browse: 0, pollinated: false,
   },
 ];
 
