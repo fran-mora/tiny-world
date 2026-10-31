@@ -461,7 +461,11 @@ export class PlanetRenderer {
     let n = 0;
     for (const i of kelpTiles) {
       _p.set(P[i * 3], P[i * 3 + 1], P[i * 3 + 2]);
-      this.placeMatrix(_p, hash(i, 5) * 6.28, this.tileRadius[i] - 0.02, 0.8 + hash(i, 6) * 0.7, _m, i, 0.07);
+      // keep kelp fully under the surface: its height (~0.5 at scale 1) is capped by the water depth
+      const depth = R - this.tileRadius[i];
+      const ks = Math.min(1.3, depth * 1.5) * (0.75 + hash(i, 6) * 0.35);
+      if (ks < 0.12) continue;
+      this.placeMatrix(_p, hash(i, 5) * 6.28, this.tileRadius[i] - 0.02, ks, _m, i, 0.07);
       ek.mesh.setMatrixAt(n++, _m);
     }
     ek.mesh.count = n; ek.mesh.instanceMatrix.needsUpdate = true;
