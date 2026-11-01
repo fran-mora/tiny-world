@@ -3,13 +3,14 @@
 let ctx = null, master = null, sfxBus = null, musicBus = null, reverb = null;
 let sfxOn = true, musicOn = true;
 let musicMode = null, musicTimer = null, droneNodes = [];
+let hidden = false, suspendTimer = null;
 const lastPlayed = {};
 
 export const audio = {
   get ready() { return !!ctx; },
 
   init() {
-    if (ctx) { if (ctx.state === 'suspended') ctx.resume(); return; }
+    if (ctx) { if (ctx.state === 'suspended' && !document.hidden) this.resume(); return; }
     const AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return;
     ctx = new AC();
@@ -25,15 +26,37 @@ export const audio = {
     if (musicMode) { const m = musicMode; musicMode = null; this.music(m); }
   },
 
-  suspend() { if (ctx && ctx.state === 'running') ctx.suspend(); },
-  resume() { if (ctx && ctx.state === 'suspended') ctx.resume(); },
+  // Going to the background: silence instantly, stop the music sequencer, then suspend.
+  // Suspending while sound is still playing makes iOS repeat the last audio buffer as a harsh buzz.
+  suspend() {
+    if (!ctx) return;
+    hidden = true;
+    try { master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setValueAtTime(0, ctx.currentTime); } catch (e) {}
+    if (musicTimer) { clearInterval(musicTimer); musicTimer = null; }
+    for (const n of droneNodes.slice(1)) { try { n.stop(); } catch (e) {} }
+    droneNodes = [];
+    clearTimeout(suspendTimer);
+    suspendTimer = setTimeout(() => { if (hidden && ctx.state === 'running') ctx.suspend().catch(() => {}); }, 150);
+  },
+  resume() {
+    if (!ctx) return;
+    const wasHidden = hidden;
+    hidden = false;
+    clearTimeout(suspendTimer);
+    const go = () => {
+      if (!wasHidden) return;
+      try { master.gain.cancelScheduledValues(ctx.currentTime); master.gain.setValueAtTime(0, ctx.currentTime); master.gain.linearRampToValueAtTime(0.8, ctx.currentTime + 0.6); } catch (e) {}
+      if (musicMode && !musicTimer) startMusic(musicMode);
+    };
+    if (ctx.state === 'suspended') ctx.resume().then(go).catch(() => {}); else go();
+  },
 
   setSfx(on) { sfxOn = on; if (sfxBus) sfxBus.gain.setTargetAtTime(on ? 0.7 : 0, ctx.currentTime, 0.05); },
   setMusic(on) { musicOn = on; if (musicBus) musicBus.gain.setTargetAtTime(on ? 0.32 : 0, ctx.currentTime, 0.3); },
 
   // name: string; opts: { pitch, vol, pan }
   sfx(name, opts = {}) {
-    if (!ctx || !sfxOn) return;
+    if (!ctx || !sfxOn || hidden) return;
     const now = ctx.currentTime;
     // rate-limit spammy sounds
     const minGap = { eat: 0.035, hurt: 0.08, pop: 0.03, tick: 0.03, bubble: 0.05, hit: 0.04, chirp: 0.06 }[name] || 0;
@@ -252,6 +275,8 @@ function startMusic(mode) {
   droneNodes = [dg, lfo, ...oscs];
 
   const schedule = () => {
+    if (hidden) return;
+    if (next < ctx.currentTime - 0.2) next = ctx.currentTime + 0.05; // timers were throttled: skip, don't burst
     while (next < ctx.currentTime + 0.6) {
       const bar = Math.floor(step / 8) % M.chords.length;
       const chord = M.chords[bar];

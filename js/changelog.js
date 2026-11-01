@@ -1,5 +1,6 @@
 // Player-facing release notes, newest first. Shown from the build tag on the title screen.
 export const CHANGELOG = [
+  { build: 15, title: 'Quiet exit', notes: ['Fixed the harsh noise when closing or switching away from the app.'] },
   { build: 14, title: 'No more stuck level-ups', notes: ['Fixed: once every mutation was maxed, the level-up screen was empty and the dive froze.', 'New repeatable rewards when your genome is complete: Renewal (full heal, +10 max HP), Genetic Cache (+4 DNA) and Vigor (+6% speed and biomass).'] },
   { build: 13, title: 'Named worlds & storms', notes: ['Every world gets a name: shown on the title screen, rename it in Menu.', 'Lightning flickers in the storm clouds of the young, lifeless planet.', 'Tutorial hints no longer cover open menus.'] },
   { build: 10, title: 'Seed Exchange', notes: ['From Era IV, trade spare Bloom for DNA in Research. The price rises with each trade and cools down over time.'] },

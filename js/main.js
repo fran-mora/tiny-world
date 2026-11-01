@@ -559,7 +559,7 @@ class Game {
     if (location.protocol === 'file:') return;
     navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((reg) => {
       // check for a newer version whenever the app comes back to the foreground
-      document.addEventListener('visibilitychange', () => { if (!document.hidden) reg.update().catch(() => {}); });
+      document.addEventListener('visibilitychange', () => { if (!document.hidden && reg) reg.update().catch(() => {}); });
     }).catch((e) => console.warn('SW failed', e));
     const hadController = !!navigator.serviceWorker.controller;
     let refreshing = false;
